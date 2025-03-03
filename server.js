@@ -18,8 +18,8 @@ async function startServer() {
 		await sequelize.sync({ force: false });
 		console.log("✅ Database synced");
 
-		app.use(express.json());
-		app.use(bodyParser.urlencoded({ extended: true }));
+		app.use(express.json({ strict: false }));
+		app.use(express.urlencoded({ extended: true }));
 
 		app.get("/", (req, res) => {
 			res.send({ message: "Welcome to my Express API!" });
