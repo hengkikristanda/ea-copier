@@ -18,36 +18,36 @@ async function startServer() {
 		await sequelize.sync({ force: false });
 		console.log("✅ Database synced");
 
-		app.use(express.json({ strict: false }));
+		// ✅ Use raw body parser for debugging
+		app.use(express.json({ limit: "1mb" }));
 		app.use(express.urlencoded({ extended: true }));
 
-        app.use((req, res, next) => {
-            let rawData = "";
-        
-            req.on("data", (chunk) => {
-                rawData += chunk;
-            });
-        
-            req.on("end", () => {
-                console.log("🔴 RAW REQUEST BODY RECEIVED:");
-                console.log(rawData);  // ✅ Print the exact data received from MQL4
-                try {
-                    let parsed = JSON.parse(rawData); // ✅ Attempt to parse it manually
-                    console.log("✅ Successfully Parsed JSON:", parsed);
-                } catch (error) {
-                    console.error("❌ JSON Parsing Error:", error.message);
-                }
-            });
-        
-            next();
-        });
+		// ✅ Log raw request body before parsing
+		app.use((req, res, next) => {
+			console.log("🔴 HEADERS RECEIVED:", req.headers);
+			req.rawBody = "";
+			req.setEncoding("utf8");
+			req.on("data", (chunk) => {
+				req.rawBody += chunk;
+			});
+			req.on("end", () => {
+				console.log("🔴 RAW BODY RECEIVED:", req.rawBody);
+				try {
+					const parsed = JSON.parse(req.rawBody);
+					console.log("✅ Successfully Parsed JSON:", parsed);
+				} catch (error) {
+					console.error("❌ JSON Parsing Error:", error.message);
+				}
+				next();
+			});
+		});
 
 		app.get("/", (req, res) => {
 			res.send({ message: "Welcome to my Express API!" });
 		});
 
 		app.post("/api/order", async (req, res) => {
-			console.log("RAW BODY RECEIVED:", JSON.stringify(req.body));
+			console.log("🟢 Parsed JSON Body:", req.body);
 
 			const { orderNo, symbol, orderType, open, tp, sl, size, orderDateTime } = req.body;
 
@@ -58,16 +58,7 @@ async function startServer() {
 			// Response format
 			const response = {
 				message: "Order received successfully",
-				order: {
-					orderNo,
-					symbol,
-					orderType,
-					open,
-					tp,
-					sl,
-					size,
-					orderDateTime,
-				},
+				order: { orderNo, symbol, orderType, open, tp, sl, size, orderDateTime },
 			};
 
 			const orders = await Orders.findAll({ raw: true });
