@@ -19,14 +19,21 @@ async function startServer() {
 		console.log("✅ Database synced");
 
 		// ✅ Use built-in body parser (DO NOT manually process req.on("data"))
-		app.use(express.json({ limit: "1mb" }));
+		app.use(express.json({ type: '*/*', limit: "1mb" }));
 		app.use(express.urlencoded({ extended: true }));
 
 		// ✅ Log headers and parsed body
 		app.use((req, res, next) => {
-			console.log("🔴 HEADERS RECEIVED:", req.headers);
-			console.log("🔴 BODY RECEIVED:", req.body); // ✅ This should now work properly
-			next();
+			let rawData = "";
+
+			req.on("data", (chunk) => {
+				rawData += chunk;
+			});
+
+			req.on("end", () => {
+				console.log("🔴 RAW BODY RECEIVED:", JSON.stringify(rawData));
+				next();
+			});
 		});
 
 		app.get("/", (req, res) => {
