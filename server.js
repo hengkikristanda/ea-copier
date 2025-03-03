@@ -21,6 +21,27 @@ async function startServer() {
 		app.use(express.json({ strict: false }));
 		app.use(express.urlencoded({ extended: true }));
 
+        app.use((req, res, next) => {
+            let rawData = "";
+        
+            req.on("data", (chunk) => {
+                rawData += chunk;
+            });
+        
+            req.on("end", () => {
+                console.log("🔴 RAW REQUEST BODY RECEIVED:");
+                console.log(rawData);  // ✅ Print the exact data received from MQL4
+                try {
+                    let parsed = JSON.parse(rawData); // ✅ Attempt to parse it manually
+                    console.log("✅ Successfully Parsed JSON:", parsed);
+                } catch (error) {
+                    console.error("❌ JSON Parsing Error:", error.message);
+                }
+            });
+        
+            next();
+        });
+
 		app.get("/", (req, res) => {
 			res.send({ message: "Welcome to my Express API!" });
 		});
