@@ -26,6 +26,8 @@ async function startServer() {
 		});
 
 		app.post("/api/order", async (req, res) => {
+			console.log("RAW BODY RECEIVED:", JSON.stringify(req.body));
+
 			const { orderNo, symbol, orderType, open, tp, sl, size, orderDateTime } = req.body;
 
 			if (!symbol || !orderType || !open || !tp || !sl || !size || !orderDateTime) {
@@ -52,11 +54,10 @@ async function startServer() {
 			res.status(200).json(orders);
 		});
 
-        app.get("/api/order/:accountId", async (req, res) => {
+		app.get("/api/order/:accountId", async (req, res) => {
+			const accountId = req.params.accountId;
 
-            const accountId = req.params.accountId;
-
-            const orders = await Orders.findOne({ raw: true });
+			const orders = await Orders.findOne({ raw: true });
 
 			res.status(200).json(orders);
 		});
