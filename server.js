@@ -18,28 +18,15 @@ async function startServer() {
 		await sequelize.sync({ force: false });
 		console.log("✅ Database synced");
 
-		// ✅ Use raw body parser for debugging
+		// ✅ Use built-in body parser (DO NOT manually process req.on("data"))
 		app.use(express.json({ limit: "1mb" }));
 		app.use(express.urlencoded({ extended: true }));
 
-		// ✅ Log raw request body before parsing
+		// ✅ Log headers and parsed body
 		app.use((req, res, next) => {
 			console.log("🔴 HEADERS RECEIVED:", req.headers);
-			req.rawBody = "";
-			req.setEncoding("utf8");
-			req.on("data", (chunk) => {
-				req.rawBody += chunk;
-			});
-			req.on("end", () => {
-				console.log("🔴 RAW BODY RECEIVED:", req.rawBody);
-				try {
-					const parsed = JSON.parse(req.rawBody);
-					console.log("✅ Successfully Parsed JSON:", parsed);
-				} catch (error) {
-					console.error("❌ JSON Parsing Error:", error.message);
-				}
-				next();
-			});
+			console.log("🔴 BODY RECEIVED:", req.body); // ✅ This should now work properly
+			next();
 		});
 
 		app.get("/", (req, res) => {
@@ -62,14 +49,6 @@ async function startServer() {
 			};
 
 			const orders = await Orders.findAll({ raw: true });
-
-			res.status(200).json(orders);
-		});
-
-		app.get("/api/order/:accountId", async (req, res) => {
-			const accountId = req.params.accountId;
-
-			const orders = await Orders.findOne({ raw: true });
 
 			res.status(200).json(orders);
 		});
